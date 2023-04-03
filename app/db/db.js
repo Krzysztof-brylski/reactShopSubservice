@@ -39,9 +39,45 @@ class Db {
      * @returns {Db}
      * @constructor
      */
-     where(fieldName, value, operator="*"){
+     where(fieldName, value, operator="="){
         this.query+=`WHERE ${fieldName} ${operator} '${value}' `;
         return this;
+     }
+
+    /**
+     * add AND condition to where statement
+     * @param fieldName
+     * @param value
+     * @param operator
+     * @returns {Db}
+     */
+     and(fieldName, value, operator="="){
+         this.query+=`AND ${fieldName} ${operator} '${value}' `;
+         return this;
+     }
+
+    /**
+     * add OR condition to where statement
+     * @param fieldName
+     * @param value
+     * @param operator
+     * @returns {Db}
+     */
+     or(fieldName, value, operator="="){
+        this.query+=`OR ${fieldName} ${operator} '${value}' `;
+        return this;
+     }
+
+
+    /**
+     * apply response row limit
+     * @param rowsCount
+     * @param offset
+     * @returns {Db}
+     */
+     limit(rowsCount,offset = 0){
+         this.query+=`LIMIT  ${offset}, ${rowsCount}`;
+         return this;
      }
 
     /**
