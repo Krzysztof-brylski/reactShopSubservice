@@ -26,7 +26,7 @@ class Db {
      * @returns {Db}
      * @constructor
      */
-     static Select(tableName, fieldsList="*"){
+     static select(tableName, fieldsList="*"){
          Db.queryString+=`SELECT ${Array.isArray(tableName) ? fieldsList.join(", ") : fieldsList} FROM ${tableName} `;
          return new Db(null,null,null,null,Db.queryString);
      }
@@ -81,7 +81,7 @@ class Db {
      }
 
     /**
-     * execute query method
+     * run query
      * @constructor
      */
     get(){
@@ -96,33 +96,49 @@ class Db {
                     resolve(result)
                 });
             });
-            Db.query=``;
+            Db.queryString=``;
         });
     }
 
     /**
-     * execute insert query
+     * add insert into to query
      * @param tableName
      * @param fieldsNameWithValue - object with data to insert keys=> fields names; values=> values
-     * @returns {Promise<unknown>}
+     * @returns {Db}
      */
     static insert(tableName,fieldsNameWithValue){
-        let con = new Db();
+
         let fieldsNames=Object.keys(fieldsNameWithValue);
         let fieldsValues=Object.values(fieldsNameWithValue).map(element=>{
             return `'${element}'`;
         });
-
-        return new Promise((resolve, reject)=> {
-            con.connection.connect((err) => {
-                if (err) reject( new Error(err));
-                con.connection.query(`INSERT INTO ${tableName} (${fieldsNames.join(', ')}) VALUES (${fieldsValues.join(", ")})`
-                    , (err, result) => {
-                        if (err) reject( new Error(err));
-                        resolve("Success")
-                });
-            });
-        });
+        return new Db(null,
+            null,
+            null,
+            null,
+            `INSERT INTO ${tableName} (${fieldsNames.join(', ')}) VALUES (${fieldsValues.join(", ")})`
+        );
     }
+
+    /**
+     * add update to query
+     * @param tableName
+     * @param fieldsNameWithValue
+     * @returns {Db}
+     */
+    static update(tableName,fieldsNameWithValue){
+        var updateData="";
+        Object.keys(fieldsNameWithValue).map((element)=>{
+            updateData += `${element} = '${fieldsNameWithValue[element]}' `;
+        });
+
+        return new Db(null,
+            null,
+            null,
+            null,
+            `UPDATE ${tableName} SET ${updateData}`
+        );
+    }
+
 }
 module.exports = Db;
