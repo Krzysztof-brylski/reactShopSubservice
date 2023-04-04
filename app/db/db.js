@@ -92,12 +92,25 @@ class Db {
                 if(err) throw err;
                 this.connection.query(queryString,(err,result)=>{
                     if(err) reject( new Error(err));
-
                     resolve(result)
                 });
             });
             Db.queryString=``;
         });
+    }
+
+    /**
+     * run query and return fist found element
+     */
+    async first(){
+        var result=[];
+        await this.get().then((res)=>{
+            if(res.length === 0) return;
+            result = res[0];
+        }).catch((err)=>{
+            throw err;
+        });
+        return result;
     }
 
     /**
