@@ -153,5 +153,19 @@ class Db {
         );
     }
 
+    /**
+     * add Delete query
+     * @param tableName
+     * @returns {Db}
+     */
+    static delete(tableName){
+        return new Db(null,
+            null,
+            null,
+            null,
+            `DELETE FROM ${tableName}`
+        );
+    }
+
 }
 module.exports = Db;

@@ -8,6 +8,22 @@ const app = express();
 app.use(express.json());
 app.set("view engine",'hbs');
 
+const generateAccessToken=(user)=>{
+    return jwt.sign(
+        JSON.parse(JSON.stringify(user)),
+        process.env.APP_SECRET_KEY,
+        {expiresIn: "15m"}
+    )
+};
+const generateRefreshToken=(user)=>{
+    let RefreshToken= jwt.sign(
+        JSON.parse(JSON.stringify(user)),
+        process.env.APP_REFRESH_KEY,
+    );
+    Db.insert('refresh_tokens',{token:RefreshToken}).get();
+    return RefreshToken;
+};
+
 
 app.get("/",(req,res)=>{
     Db.select("users").get().then((res)=>{
@@ -38,12 +54,12 @@ app.post("/register", async (req, res)=>{
     };
     Db.insert('users',userData).get().then(()=>{
         delete result['userData'];
+        const refresh_token=generateRefreshToken(userData);
+
         return res.status(200).json({
             user:userData,
-            accessToken:jwt.sign(
-                JSON.parse(JSON.stringify(userData)),
-                process.env.APP_SECRET_KEY
-            ),
+            accessToken: generateAccessToken(userData),
+            refreshToken:refresh_token
         });
     }).catch(()=>{
         return res.status(500).send("Unknown error. Please contact page admin");
@@ -64,12 +80,11 @@ app.post("/login", async (req,res)=>{
 
             if (bcrypt.compare(userData.password, result.password)) {
                 delete result['password'];
+                const refresh_token=generateRefreshToken(userData);
                 return res.status(200).json({
                     user:result,
-                    accessToken:jwt.sign(
-                        JSON.parse(JSON.stringify(result)),
-                        process.env.APP_SECRET_KEY
-                    ),
+                    accessToken:generateAccessToken(result),
+                    refreshToken:refresh_token,
                 });
             }
             return res.status(403).send("Unauthorized!");
@@ -82,8 +97,45 @@ app.post("/login", async (req,res)=>{
 
 });
 
-app.post("/logout", Auth,(req,res)=>{
-    return res.status(200).send();
+/**
+ * refresh access token route
+ */
+app.post("/token", async (req,res)=>{
+    const  refreshToken=req.body.refreshToken;
+    if(refreshToken == null) return res.sendStatus(401);
+    var status;
+    await Db.select('refresh_tokens').where('token',refreshToken).first().then((response)=>{
+        if(response.length ===0){
+            status = res.sendStatus(403);
+        }
+    }).catch((err)=>{
+        console.error(err);
+        status = res.status(500).send("Unknown error. Please contact page admin");
+    });
+    if(status !== undefined){
+        return status;
+    }
+
+    jwt.verify(refreshToken,process.env.APP_REFRESH_KEY,(err,user)=>{
+       if(err) return res.sendStatus(403);
+       return res.json({
+           accessToken:generateAccessToken(user),
+       })
+    });
+
+});
+
+
+app.post("/logout",Auth,(req,res)=>{
+    const  refreshToken=req.body.refreshToken;
+    if(refreshToken == null) return res.sendStatus(401);
+    var status;
+    Db.delete('refresh_tokens').where('token',refreshToken).get().catch((err)=>{
+        console.error(err);
+        status = res.status(500).send("Unknown error. Please contact page admin");
+    });
+    if(status !== undefined) return status;
+    res.sendStatus(204);
 });
 
 
