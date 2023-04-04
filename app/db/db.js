@@ -4,7 +4,7 @@ require('dotenv').config();
  * simple db driver
  */
 class Db {
-    static query='';
+    static queryString='';
     /**
      * db driver constructor
      */
@@ -16,7 +16,7 @@ class Db {
              database: (host === null ?  process.env.DB_NAME : database),
 
          });
-         Db.query =lastQuery;
+         Db.queryString =lastQuery;
      }
 
     /**
@@ -27,8 +27,8 @@ class Db {
      * @constructor
      */
      static Select(tableName, fieldsList="*"){
-         Db.query+=`SELECT ${Array.isArray(tableName) ? fieldsList.join(", ") : fieldsList} FROM ${tableName} `;
-         return new Db(null,null,null,null,this.query);
+         Db.queryString+=`SELECT ${Array.isArray(tableName) ? fieldsList.join(", ") : fieldsList} FROM ${tableName} `;
+         return new Db(null,null,null,null,Db.queryString);
      }
 
     /**
@@ -40,7 +40,7 @@ class Db {
      * @constructor
      */
      where(fieldName, value, operator="="){
-        Db.query+=`WHERE ${fieldName} ${operator} '${value}' `;
+        Db.queryString+=`WHERE ${fieldName} ${operator} '${value}' `;
         return this;
      }
 
@@ -52,7 +52,7 @@ class Db {
      * @returns {Db}
      */
      and(fieldName, value, operator="="){
-        Db.query+=`AND ${fieldName} ${operator} '${value}' `;
+        Db.queryString+=`AND ${fieldName} ${operator} '${value}' `;
          return this;
      }
 
@@ -64,7 +64,7 @@ class Db {
      * @returns {Db}
      */
      or(fieldName, value, operator="="){
-        Db.query+=`OR ${fieldName} ${operator} '${value}' `;
+        Db.queryString+=`OR ${fieldName} ${operator} '${value}' `;
         return this;
      }
 
@@ -76,7 +76,7 @@ class Db {
      * @returns {Db}
      */
      limit(rowsCount,offset = 0){
-         Db.query+=`LIMIT  ${offset}, ${rowsCount}`;
+         Db.queryString+=`LIMIT  ${offset}, ${rowsCount}`;
          return this;
      }
 
@@ -85,12 +85,12 @@ class Db {
      * @constructor
      */
     get(){
-        const query = Db.query;
+        const queryString = Db.queryString;
         return new Promise((resolve, reject)=>{
 
             this.connection.connect((err)=>{
                 if(err) throw err;
-                this.connection.query(query,(err,result)=>{
+                this.connection.query(queryString,(err,result)=>{
                     if(err) reject( new Error(err));
 
                     resolve(result)
@@ -106,16 +106,17 @@ class Db {
      * @param fieldsNameWithValue - object with data to insert keys=> fields names; values=> values
      * @returns {Promise<unknown>}
      */
-    insert(tableName,fieldsNameWithValue){
-        const fieldsNames=Object.keys(fieldsNameWithValue);
-        const fieldsValues=Object.values(fieldsNameWithValue).map(element=>{
+    static insert(tableName,fieldsNameWithValue){
+        let con = new Db();
+        let fieldsNames=Object.keys(fieldsNameWithValue);
+        let fieldsValues=Object.values(fieldsNameWithValue).map(element=>{
             return `'${element}'`;
         });
 
         return new Promise((resolve, reject)=> {
-            this.connection.connect((err) => {
+            con.connection.connect((err) => {
                 if (err) reject( new Error(err));
-                this.connection.query(`INSERT INTO ${tableName} (${fieldsNames.join(', ')}) VALUES (${fieldsValues.join(", ")})`
+                con.connection.query(`INSERT INTO ${tableName} (${fieldsNames.join(', ')}) VALUES (${fieldsValues.join(", ")})`
                     , (err, result) => {
                         if (err) reject( new Error(err));
                         resolve("Success")
