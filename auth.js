@@ -4,27 +4,11 @@ require('dotenv').config();
 const app = express();
 app.set("view engine",'hbs');
 
-console.log(Db.Select("","").where('name','tak').where('yesy','yesy'));
-/**
- *
- */
-app.post("/token",(res,req)=>{
-
-});
-
-/**
- *
- */
-app.post("/login",(req,res)=>{
-
-});
-/**
- *
- */
-app.post("/logout",(req,res)=>{
-
-});
 app.get("/",(req,res)=>{
+    Db.Select("users").get().then((res)=>{
+        console.log(res);
+    });
+
     res.render("index");
 });
 

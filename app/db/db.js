@@ -16,7 +16,7 @@ class Db {
              database: (host === null ?  process.env.DB_NAME : database),
 
          });
-         this.query=lastQuery;
+         Db.query =lastQuery;
      }
 
     /**
@@ -27,7 +27,7 @@ class Db {
      * @constructor
      */
      static Select(tableName, fieldsList="*"){
-         this.query+=`SELECT ${Array.isArray(tableName) ? fieldsList.join(", ") : fieldsList} FROM ${tableName} `;
+         Db.query+=`SELECT ${Array.isArray(tableName) ? fieldsList.join(", ") : fieldsList} FROM ${tableName} `;
          return new Db(null,null,null,null,this.query);
      }
 
@@ -40,7 +40,7 @@ class Db {
      * @constructor
      */
      where(fieldName, value, operator="="){
-        this.query+=`WHERE ${fieldName} ${operator} '${value}' `;
+        Db.query+=`WHERE ${fieldName} ${operator} '${value}' `;
         return this;
      }
 
@@ -52,7 +52,7 @@ class Db {
      * @returns {Db}
      */
      and(fieldName, value, operator="="){
-         this.query+=`AND ${fieldName} ${operator} '${value}' `;
+        Db.query+=`AND ${fieldName} ${operator} '${value}' `;
          return this;
      }
 
@@ -64,7 +64,7 @@ class Db {
      * @returns {Db}
      */
      or(fieldName, value, operator="="){
-        this.query+=`OR ${fieldName} ${operator} '${value}' `;
+        Db.query+=`OR ${fieldName} ${operator} '${value}' `;
         return this;
      }
 
@@ -76,7 +76,7 @@ class Db {
      * @returns {Db}
      */
      limit(rowsCount,offset = 0){
-         this.query+=`LIMIT  ${offset}, ${rowsCount}`;
+         Db.query+=`LIMIT  ${offset}, ${rowsCount}`;
          return this;
      }
 
@@ -85,13 +85,18 @@ class Db {
      * @constructor
      */
     get(){
-        this.query=``;
-        this.connection.connect((err)=>{
-            if(err) throw err;
-            this.connection.query(this.query,(err,result)=>{
+        const query = Db.query;
+        return new Promise((resolve, reject)=>{
+
+            this.connection.connect((err)=>{
                 if(err) throw err;
-                return result;
+                this.connection.query(query,(err,result)=>{
+                    if(err) reject( new Error(err));
+
+                    resolve(result)
+                });
             });
+            Db.query=``;
         });
     }
 
