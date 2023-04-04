@@ -100,5 +100,28 @@ class Db {
         });
     }
 
+    /**
+     * execute insert query
+     * @param tableName
+     * @param fieldsNameWithValue - object with data to insert keys=> fields names; values=> values
+     * @returns {Promise<unknown>}
+     */
+    insert(tableName,fieldsNameWithValue){
+        const fieldsNames=Object.keys(fieldsNameWithValue);
+        const fieldsValues=Object.values(fieldsNameWithValue).map(element=>{
+            return `'${element}'`;
+        });
+
+        return new Promise((resolve, reject)=> {
+            this.connection.connect((err) => {
+                if (err) reject( new Error(err));
+                this.connection.query(`INSERT INTO ${tableName} (${fieldsNames.join(', ')}) VALUES (${fieldsValues.join(", ")})`
+                    , (err, result) => {
+                        if (err) reject( new Error(err));
+                        resolve("Success")
+                });
+            });
+        });
+    }
 }
 module.exports = Db;
